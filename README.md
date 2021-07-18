@@ -1,3 +1,8 @@
+Note: This fork contains my annotated solutions to the Formalising Mathematics course.
+If you want to do the course yourself then you want
+
+[ImperialCollegeLondon/formalising-mathematics](https://github.com/ImperialCollegeLondon/formalising-mathematics)
+
 # Formalising Mathematics
 
 Repository for the Jan-Mar 2021 EPSRC TCC course on formalising mathematics, delivered to mathematicians at Imperial, Oxford, Bristol, Bath and Warwick.

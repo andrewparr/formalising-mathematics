@@ -65,7 +65,8 @@ the `assumption` tactic.
 theorem id : P → P :=
 begin
   -- Prove this using `intro` and `exact`
-  sorry
+  intro h, -- this gives us h : P and changes goal to P
+  exact h -- our goal is P and h is a proof of P so our goal is exact h.
 end
 
 /-
@@ -89,21 +90,37 @@ begin
   -- remember that by definition the goal is P → (Q → P).
   -- Prove this proposition using `intro` and `exact`.
   -- Experiment. Can you prove it using `intros` and `assumption`?
-  sorry
+  intro hP, -- gives us hP : P with goal Q → P
+  intro hQ, -- give us hQ : Q
+  exact hP
 end
+
+theorem imp_intro' : P → Q → P :=
+begin
+  -- remember that by definition the goal is P → (Q → P).
+  -- Experiment. Can you prove it using `intros` and `assumption`?
+  intros hP hQ, -- gives us hP : P and hQ : Q in one line
+  assumption -- proves the goal using the hypotheses we have
+end
+
 
 /-- If we know `P`, and we also know `P → Q`, we can deduce `Q`. -/
 lemma modus_ponens : P → (P → Q) → Q :=
 begin
   -- You might find the `apply` tactic useful here.
-  sorry
+  intros hP hPQ, -- gives use hP : P and hPQ : P → Q and goal Q
+  apply hPQ, -- if we have to prove Q and we have proof of P → Q, then it's sufficient to prove P
+  exact hP
 end
 
 /-- implication is transitive -/
 lemma imp_trans : (P → Q) → (Q → R) → (P → R) :=
 begin
   -- The tactics you know should be enough
-  sorry
+  intros hPQ hQR hP, -- goal left as R
+  apply hQR, -- changes goal from R to Q
+  apply hPQ, -- chnages goal from Q to P
+  exact hP
 end
 
 -- This one is a "relative modus ponens" -- in the
@@ -112,8 +129,27 @@ lemma forall_imp : (P → Q → R) → (P → Q) → (P → R) :=
 begin
   -- `intros hPQR hPQ hP,` would be a fast way to start.
   -- Make sure you understand what is going on there, if you use it.
-  sorry
+  intros hPQR hPQ hP, -- hPQR : P → Q → R, hPQ : P → Q, hP : P
+  -- the goal here is R
+  apply hPQR, -- we want R, and we have P → Q → R and so it is sufficient to prove both P and Q
+  {exact hP}, -- when you have two goals it's common practive to use {} to separate goals out
+  -- the goal in {} is just P and that is exactly hP,
+  apply hPQ, -- to prove Q it is sufficient to prove P
+  exact hP,
 end
+
+/- My notes on what the above is saying.
+  The statement says that if P implies that (Q implies R) and that P implies Q
+  Then are also have P implies R.
+  Suppose
+    hP is I'm English.
+    hQ is I drink tea.
+    hR is I dunk biscuits in my tea.
+    P → R, says English people dunk biscuits in their tea.
+    That's what you want to prove to prove this you have the proof that
+    hPQR which is If you are English then your dunk bisbuits in your tea.
+    and hPQ which is If you are English then you drink tea.
+-/
 
 /-
 
@@ -140,13 +176,36 @@ begin
   rw not_iff_imp_false,
   -- You can use `rw not_iff_imp_false` to change `¬ X` into `X → false`. 
   -- But you don't actually have to, because they are the same *by definition*
-  sorry,
+  -- Here we have hP : need to prove ¬P → false
+  -- intro nP here gives hP : P and nP : ¬ P 
+  -- with the goal of false - but not sure how that helps.
+  -- tauto, here finishes the goal
+  -- finish, so does finish
+  -- hint, here also tells you tauto and finish will finish this goal
+  -- suggest, -- this suggests exact not_not_intro hP
+  -- exact not_not_intro hP,  -- this also finishes the goal
+  -- apply not_not_intro hP, -- this also closed the goal
+  -- In an attempt to see what is going on, 
+  -- the goal here is ¬ P → false 
+  apply not_not_intro, -- this changes the goal of ¬¬ P to P
+  -- NOTE: the goal was ¬¬ P before the rw not_iff_imp_false, line
+  -- these are (as stated above) definitionally equivalent.
+  -- after this line the goal is P which is exactly hP
+  exact hP,
 end
 
 -- Here is a funny alternative proof! Can you work out how it works?
 example : P → ¬ (¬ P) :=
 begin
   apply modus_ponens,
+  -- Recall modus ponens says 
+  -- "If we know P, and we also know P → Q, we can deduce Q. "
+  -- That is P → (P → Q) → Q 
+  -- Here P is P, and Q is ¬ ¬ P
+  -- which is definitionally equivalent to ¬ P → false
+  -- which is P → true ?
+  -- if this is the case then apply modus_ponens would take
+  -- P and P → true to make true. So it works!
 end
 
 -- Here is a proof which does not use tactics at all, but uses lambda calculus.
@@ -155,6 +214,21 @@ end
 -- it does not scale well in practice.
 example : P → ¬ (¬ P) :=
 λ hP hnP, hnP hP
+
+/- What is going on with this "term mode" proof above?
+  The equivalent tactic proof is shown below.
+   λ hP hnP is the equivalent to
+   intros hP hnP
+   hnP is just apply hnP
+   hP is just apply hP (or better written as exact hP)
+-/
+example : P → ¬ (¬ P) :=
+begin
+  intros hP hnP,
+  apply hnP,
+  apply hP, -- it would be better to write exact hP here
+end
+
 
 -- This is "modus tollens". Some mathematicians think of it as
 -- "proof by contradiction".
