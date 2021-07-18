@@ -234,8 +234,22 @@ end
 -- "proof by contradiction".
 theorem modus_tollens : (P → Q) → (¬ Q → ¬ P) :=
 begin
-  sorry,
+  intros hPQ hnQ, -- hPQ : P → Q, hnQ : ¬ Q 
+  -- the goal here is -P, which we know from above is equivalent to
+  -- P → false and so
+  intro hP, -- gives us hP : P and goal false
+  apply hnQ,
+  apply hPQ,
+  exact hP,
 end
+
+-- OK, based on what was said above. Let's try and write this as a term mode proof
+-- Clearly it's more complicated than I suggested, I had to drop into tatic mode
+-- for this to work. So you can't just list the Props to "apply" them.
+-- Still this is a "compact" form of the above.
+example : (P → Q) → (¬ Q → ¬ P) :=
+λ hPQ hnQ hP, by {apply hnQ, apply hPQ, exact hP}
+
 
 -- This one cannot be proved using constructive mathematics!
 -- You _have_ to use a tactic like `by_contra` (or, if you're happy
@@ -243,7 +257,18 @@ end
 -- Try it without using these, and you'll get stuck!
 theorem double_negation_elimination : ¬ (¬ P) → P :=
 begin
-  sorry,
+  -- tauto!, -- This will solve it in one line, but surely a cheat when learning lean.
+  intro hnnP, -- hnnP : ¬¬P
+  by_contradiction hnP, -- note by_contra achieves the same thing with less letters and less clear to me.
+  -- exact hnnP hnP, -- This works, I found this from using library_search.
+  --   This is possibly just a shortcut way of writting the following clearer proof.
+  -- A clearly method.
+  -- after using by_contradiction above our goal is false.
+  -- we have hnnP : ¬¬P which is saying ¬P → false
+  -- so we can apply this to false
+  apply hnnP, -- This says to prove false we have to prove ¬ P
+  -- but this is exactly hnP we got from the by_contradiction line above.
+  exact hnP,
 end
 
 /-!
