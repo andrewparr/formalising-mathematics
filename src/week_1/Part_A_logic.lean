@@ -312,44 +312,78 @@ theorem and.elim_left : P ∧ Q → P :=
 begin
   -- I would recommend starting with
   -- `intro hPaQ,` and then `cases hPaQ with hP hQ`.
-  sorry
+  intro hPaQ,
+  cases hPaQ with hP hQ,
+  exact hP,
 end
 
 theorem and.elim_right : P ∧ Q → Q :=
 begin
-  sorry
+  intro hPaQ,
+  exact hPaQ.right, -- another way without using cases
+  -- note exact hPaQ.2 also works
 end
 
 -- fancy term mode proof
 example : P ∧ Q → Q := λ hPaQ, hPaQ.2
 
+-- my fancy term mode proof of hte first case
+example : P ∧ Q → P := λ hPaQ, hPaQ.1
+
+-- note, .1 and .2 are used here rather than .left and .right
+-- but .left works in this term proof and as commented above
+-- hPaQ.2 works in the tactic proof.  So these are probaly
+-- just different ways of saying the same thing.
+
 theorem and.intro : P → Q → P ∧ Q :=
 begin
   -- remember the `split` tactic.
-  sorry
+  intros hP hQ,
+  split,
+    exact hP,
+  exact hQ,
 end
 
 /-- the eliminator for `∧` -/ 
 theorem and.elim : P ∧ Q → (P → Q → R) → R :=
 begin
-  sorry,
+  intro hPaQ, -- give  hPaQ : P ∧ Q
+  intro hPQR, -- gives hPQR : P → Q → R (with goal of R)
+  apply hPQR, -- makes two goals P and Q these are the left and right of hPaQ
+    exact hPaQ.1,
+  exact hPaQ.2
 end
 
 /-- The recursor for `∧` -/
 theorem and.rec : (P → Q → R) → P ∧ Q → R :=
 begin
-  sorry
+  intros hPQR hPaQ,
+  apply hPQR,
+    exact hPaQ.1,
+  exact hPaQ.2,
 end
 
 /-- `∧` is symmetric -/
 theorem and.symm : P ∧ Q → Q ∧ P :=
 begin
-  sorry
+  -- this is interesting. If I just used normal intro hPaQ
+  -- I would get hPaQ : P ∧ Q. Which is fine and I can use hPaQ.1 for proof of P
+  -- and hPaQ.2 for proof of Q. However using rintros as below I get directly
+  -- hP : P and hQ : Q
+  rintros ⟨hP, hQ⟩,
+  split, -- goal here is Q ∧ R so we split to get the two goals we need to prove
+    exact hQ,
+  exact hP,
 end
 
 -- term mode proof
 example : P ∧ Q → Q ∧ P :=
 λ ⟨hP, hQ⟩, ⟨hQ, hP⟩
+
+/- My notes, thoughts on above.
+ λ ⟨hP, hQ⟩ does the same as the rintos line I have above
+ the ⟨hQ, hP⟩ is obviously a term mode of writing the split and exacts that I have above.
+-/
 
 /-- `∧` is transitive -/
 theorem and.trans : (P ∧ Q) → (Q ∧ R) → (P ∧ R) :=
@@ -358,8 +392,15 @@ begin
   -- If you like, try starting this proof with `rintro ⟨hP, hQ⟩` if you want
   -- to experiment with it. Get the pointy brackets with `\<` and `\>`,
   -- or both at once with `\<>`.
-  sorry,
+  rintro ⟨hP, hQ⟩,
+  rintro ⟨hQ', hR⟩, -- end up with to hypothesis of Q here
+  exact ⟨hP, hR⟩, -- and the exact can also be used to prove P ∧ R in one go
 end
+
+-- OK, lets see if I can write that as a term mode proof following previous example 
+example : (P ∧ Q) → (Q ∧ R) → (P ∧ R) :=
+λ ⟨hP, hQ⟩ ⟨hQ', hR⟩, ⟨hP, hR⟩ 
+-- that seems to have worked.
 
 /-
 Recall that the convention for the implies sign →
