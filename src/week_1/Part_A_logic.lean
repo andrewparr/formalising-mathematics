@@ -669,37 +669,125 @@ end
 /-- `∨` is commutative -/
 theorem or.comm : P ∨ Q ↔ Q ∨ P :=
 begin
-  sorry,
+  split; -- used a semicolon here as the follow works for both parts
+  {
+    intro h,
+    apply or.symm,
+    assumption,
+  }
+end
+
+-- This also works and is shorter
+theorem or.comm' : P ∨ Q ↔ Q ∨ P :=
+begin
+  split;
+  apply or.symm,
 end
 
 /-- `∨` is associative -/
 theorem or.assoc : (P ∨ Q) ∨ R ↔ P ∨ Q ∨ R :=
 begin
-  sorry,
+  -- what I came up with. Does the job but is long.
+  split,
+  {
+    intro h,
+    cases h,
+    cases h,
+    left,
+    assumption,
+    right,
+    left,
+    assumption,
+    right,
+    right,
+    assumption,
+  },
+  {
+    intro h,
+    cases h,
+    left,
+    left,
+    assumption,
+    cases h,
+    left,
+    right,
+    assumption,
+    right,
+    assumption,
+  }
 end
+
+-- the given solution - is also along these lines but points out that rintro
+-- can do intro + cases in one go.
+theorem or.assoc' : (P ∨ Q) ∨ R ↔ P ∨ Q ∨ R :=
+begin
+  split,
+  { -- rintro can do intro+cases in one go
+    rintro ((hP | hQ) | hR),
+    { left, assumption },
+    { right, left, assumption },
+    { right, right, assumption } },
+  { rintro (hP | hQ | hR),
+    { left, left, assumption },
+    { left, right, assumption },
+    { right, assumption } }
+end
+
 
 /-!
 ### More about → and ∨
 -/
 
+-- It would seem these are just an exercise in using previous results
+-- otherwise the proofs would get long.
+
 theorem or.imp : (P → R) → (Q → S) → P ∨ Q → R ∨ S :=
 begin
-  sorry,
+  rintro hPR hQS hPoQ,
+  cases hPoQ with hP hQ,
+  -- Remember rintro can be combined with cases with parenthesis
+  -- rintro hPR hQS (hP | hQ),
+  {
+    left,
+    exact hPR hP,
+  },
+  {
+    right,
+    exact hQS hQ,
+  }
 end
 
 theorem or.imp_left : (P → Q) → P ∨ R → Q ∨ R :=
 begin
-  sorry,
+  rintro hPQ (hP | hR),
+  {left, exact hPQ hP},
+  {right, exact hR},
 end
 
 theorem or.imp_right : (P → Q) → R ∨ P → R ∨ Q :=
 begin
-  sorry,
+  -- this uses same technique as above
+  rintro hPQ (hR | hP),
+  {left, assumption,},
+  {right, exact hPQ hP},
 end
+
+-- but solution show how to use existing proven theorems to get it to match the
+-- preivous one, which can then just be applied.
+theorem or.imp_right' : (P → Q) → R ∨ P → R ∨ Q :=
+begin
+  -- reduce to previous lemma
+  rw or.comm R,
+  rw or.comm R,
+  apply or.imp_left,
+end
+
+
 
 theorem or.left_comm : P ∨ Q ∨ R ↔ Q ∨ P ∨ R :=
 begin
   -- Try rewriting `or.comm` and `or.assoc` to do this one quickly.
+  
   sorry,
 end
 
