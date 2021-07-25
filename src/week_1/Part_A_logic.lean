@@ -787,19 +787,47 @@ end
 theorem or.left_comm : P ∨ Q ∨ R ↔ Q ∨ P ∨ R :=
 begin
   -- Try rewriting `or.comm` and `or.assoc` to do this one quickly.
-  
-  sorry,
+  -- The hint is to just to match the lhs and rhs so refl will solve it.
+  -- on LHS we have P ∨ (Q or R) so commuting this produces
+  rw or.comm,   -- (Q ∨ R) ∨ P ↔ Q ∨ P ∨ R 
+  -- remove these brackets with or assoc
+  rw or.assoc,  -- Q ∨ R ∨ P ↔ Q ∨ P ∨ R
+  rw or.comm R, -- we now need to tell or comm to start form the R
 end
+
+theorem or.left_comm' : P ∨ Q ∨ R ↔ Q ∨ P ∨ R :=
+begin
+  -- The solution presents as neat way of writing a much of rw in one go
+  -- but the solution is essentially what I had
+  rw [or.comm, or.assoc, or.comm R],
+end
+
 
 /-- the recursor for `∨` -/
 theorem or.rec : (P → R) → (Q → R) → P ∨ Q → R :=
 begin
-  sorry,
+  intros hPR hQR hPoQ,
+  cases hPoQ with hP hQ,
+    exact hPR hP,
+  exact hQR hQ,
 end
+
+-- Once again the solution shows a shorter way using a previously proven result
+theorem or.rec' : (P → R) → (Q → R) → P ∨ Q → R :=
+begin
+  intros hPR hQR hPoQ,
+  -- note or.elim says theorem or.elim : P ∨ Q → (P → R) → (Q → R) → R :=
+  -- so we just have to put the hypothesis from the intros line in the correct
+  -- order.
+  exact or.elim _ _ _ hPoQ hPR hQR,
+  -- not sure why the underscores are required though.
+end
+
 
 theorem or_congr : (P ↔ R) → (Q ↔ S) → (P ∨ Q ↔ R ∨ S) :=
 begin
-  sorry,
+  intros hPR hQS,
+  rw [hPR, hQS],
 end
 
 /-!
@@ -825,30 +853,125 @@ Hint: how many cases are there?
 /-- eliminator for `false` -/
 theorem false.elim : false → P :=
 begin
-  sorry,
+  -- our goal is an implication, so 'obvious' start is with an intro
+  intro h,
+  -- we have h: false, so following hint apply cases to it
+  cases h,
+  -- this has just closed the goal.   But what is the mathemacial argument?
 end
 
 theorem and_true_iff : P ∧ true ↔ P :=
 begin
-  sorry,
+  -- Note tauto! will just solve this one.
+  split, 
+  {
+    intro h,
+    exact h.1,
+  },
+  {
+    intro h,
+    -- goal is P ∧ true
+    split, assumption,
+    trivial, -- goal of true so trivial proves it.
+  }
 end
+
+-- compare my proof above with the provided solution
+theorem and_true_iff' : P ∧ true ↔ P :=
+begin
+  split,
+  { rintro ⟨hP, -⟩,
+    exact hP },
+  { intro hP,
+    split,
+    { exact hP },
+    { trivial } }
+end
+
 
 theorem or_false_iff : P ∨ false ↔ P :=
 begin
-  sorry,
+  split,
+  intro hP,
+  {cases hP, exact hP, by_contradiction hP, assumption},
+  {intro hP, left, assumption,},
+end
+
+-- compare with the solution, need to remember the rintro short cut.
+theorem or_false_iff' : P ∨ false ↔ P :=
+begin
+  split,
+  { rintro (hP | h),
+    { assumption },
+    { cases h} },
+  { intro hP,
+    left,
+    exact hP }
 end
 
 -- false.elim is handy for this one
 theorem or.resolve_left : P ∨ Q → ¬P → Q :=
 begin
-  sorry,
+  -- this is my way, could find how false.elim was useful
+  rintro (hP | hR),
+  {
+    intro h,
+    by_contra hQ,
+    apply h,
+    assumption,
+  },
+  {
+    intro hnP,
+    assumption,
+  }
+end
+-- the given solution using false.elim
+theorem or.resolve_left' : P ∨ Q → ¬P → Q :=
+begin
+  rintro (hP | hQ) hnP,
+  { apply false.elim,
+    exact hnP hP },
+  { exact hQ },
 end
 
 -- this one you can't do constructively
 theorem or_iff_not_imp_left : P ∨ Q ↔ ¬P → Q :=
 begin
-  sorry,
+  split,
+  {
+    rintro (hP | hQ),
+    {intro hnP, by_contradiction hnQ, exact hnP hP,},
+    {intro hnP, exact hQ,},
+  },
+  {intro hnPQ, exact or_iff_not_imp_left.mpr hnPQ},
 end
+
+-- the solution is, which uses the tactic by_cases that wanted mentioned above.
+theorem or_iff_not_imp_left' : P ∨ Q ↔ ¬P → Q :=
+begin
+  split,
+  { apply or.resolve_left },
+  { intro hnPQ,
+    -- TODO : document this tactic
+    by_cases h : P,
+    { left, assumption },
+    { right, exact hnPQ h} }
+end
+
+-- from the documentaiton we have 
+-- `by_cases p` splits the main goal into two cases, assuming `h : p` in the first branch, and
+-- `h : ¬ p` in the second branch. You can specify the name of the new hypothesis using the syntax
+-- `by_cases h : p`.
+
+/-
+The goal before the by_cases here is P ∨ Q
+and we have hnPQ: ¬P → Q
+after the by_cases h: P line we have goal of  P ∨ Q in two cases
+with h : P and h : ¬P
+the first cases left of goal is P, which is proved with hP.
+the second case, left and then applying hnPQ we have goal ¬P which is h in this case.
+
+-/
 
 end xena
 
