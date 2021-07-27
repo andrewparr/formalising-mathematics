@@ -23,8 +23,20 @@ end
 
 lemma subset_refl : X ⊆ X :=
 begin
-  sorry,
+  -- This is also true by refl
+  refl,
 end
+
+-- but the solution is
+lemma subset_refl' : X ⊆ X :=
+begin
+  -- we have Ω : Type and X : set Ω  and goal is X ⊆  X
+  rw subset_def, -- how we have ∀ (a : Ω), a ∈ X → a ∈ X
+  -- goal now "for all a, ..." and `intro` makes progress with this.
+  intros a ha, -- gives ha : a in X with goal a ∈ X
+  exact ha, -- so ha is the goal, by assumption would have also worked.
+end
+-- I'm not sure the above proof adds more clarity than just the refl proof.
 
 lemma subset_trans (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) : X ⊆ Z :=
 begin
@@ -36,7 +48,26 @@ begin
   -- You can also think of it as an implication:
   -- "if a is in Ω, and if a ∈ Y, then a ∈ Z". Because it's an implication,
   -- you can `apply hYZ`. This is a really useful skill!
-  sorry
+  -- have hXY : X ⊆ Y and  hYZ : Y ⊆ Z and goal is X ⊆ Z
+  rw subset_def at *, -- the astrix here means apply to all
+  -- After this we have
+  --   hXY: ∀ (a : Ω), a ∈ X → a ∈ Y
+  --   hYZ: ∀ (a : Ω), a ∈ Y → a ∈ Z
+  -- and goal of ∀ (a : Ω), a ∈ X → a ∈ Z
+  -- So all the _ ⊆ _ have been changed to the definition of ⊆.
+  -- NOTE: the above rw just makes it clearer what is going on.
+  --       because this is the 'definition' of subset it isn't strictly necessary
+  --       commenting out the above rw subset_det at *, line and this proof still works
+  --
+  -- Since out goal is a ∀ we can intro a to make a an arbitary value
+  intro a, -- gives a : Ω with goal a ∈ X → a ∈ Z
+  intro haX, -- gives haX : a ∈ X
+  -- In this proof we're going to go backwards.
+  -- our goal is to prove a ∈ Z and we have
+  -- hYZ: a ∈ Y → a ∈ Z
+  apply hYZ, -- and so by applying hYZ we only have to prove a ∈ Y. This is our new goal
+  apply hXY, -- doing the same, makes the goal x ∈ X, which is haX above, 
+  exact haX,
 end
 
 /-!
@@ -52,6 +83,31 @@ begin
   exact set.ext_iff
 end
 
+-- My additional notes
+-- the proof of set.ext_iff is found by right clicking it and going to definition
+-- it's a term mode proof, but here it is rewritten as a tactic mode proof 
+-- for pedagogical reasons.
+theorem ext_iff' {s t : set Ω} : s = t ↔ ∀ x, x ∈ s ↔ x ∈ t :=
+begin
+  -- it's a iff so we split
+  split, {
+    intro h, -- h : s = t, goal is ∀ x : Ω
+    intro x, -- makes x : Omega and arbitary element
+    rw h, -- proves the goal
+  }, {
+    intro h, -- h : ∀ (x : Ω), x ∈ s ↔ x ∈ t 
+    -- with goal s = t,
+    -- looking at the term proof of this it uses ext
+    -- looking up ext.lean and it seems quite a powerful tatic
+    -- and I'm not sure what it means yet, probably why a proof of this theory was
+    -- missed out of this lesson.  Here it converts the goal of s = t
+    -- Ah, I see it is now explained below.
+    ext, -- to given x : Ω with goal x ∈ s ↔ x ∈ t.
+    rw h, -- this now closes the goal.
+  }
+  -- Note the above in term mode was written simply as ⟨λ h x, by rw h, ext⟩
+end
+
 -- In practice, you often have a goal `⊢ X = Y` and you want to reduce
 -- it to `a ∈ X ↔ a ∈ Y` for an arbitary `a : Ω`. This can be done with
 -- the `ext` tactic. 
@@ -60,7 +116,18 @@ end
 lemma subset.antisymm (hXY : X ⊆ Y) (hYX : Y ⊆ X) : X = Y :=
 begin
   -- start with `ext a`,
-  sorry
+  ext a, -- does same as my comments above.
+  -- the a here gives the name of the 'element' so here we have a : Ω
+  -- and the goal is now a ∈ X ↔ a ∈ Y
+  split, -- since goal is an ↔ we split it
+  {
+    -- the goal here is a ∈ X → a ∈ Y which is proved by hXY since
+    -- hXY is a proof that X ⊆ Y.
+    apply hXY
+  },
+  { -- goal here is a ∈ Y → x ∈ X which is proved since hYX is a proof the Y ⊆ X
+    apply hYX
+  }
 end
 
 /-!
