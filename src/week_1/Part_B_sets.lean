@@ -158,22 +158,67 @@ end
 
 lemma union_self : X ∪ X = X :=
 begin
-  sorry
+  -- ext means by applying functional extensionality and set extensionality.
+  -- here we just have the X : set Ω and so X is a set of values of type Ω
+  -- and we need to introduce an element of X to prove results about it.
+  -- ext a here, says let a : Ω, 
+  ext a, -- with goal now a ∈ X ∪ X ↔ a ∈ X
+  split, -- we can now split the ↔.
+  {intro h, rw union_def at h, cases h; assumption,},
+  {intro h, rw union_def, left, assumption}
 end
 
 lemma subset_union_left : X ⊆ X ∪ Y :=
 begin
-  sorry
+  -- ext doesn't work here for some reason
+  intros x h,  -- makes x : Ω and h : x ∈ X.
+  rw union_def, 
+  -- This seems to me to be a good example of why a rw union_def helps even though
+  -- it isn't needed.  Before the rw union_def we had h: x ∈ X and needed to prove
+  -- x ∈ X ∪ Y.  It wasn't immediately obvious to me that left was the required next
+  -- step. but after rw union_def we have the goal of
+  -- x ∈ X ∨ x ∈ Y.  And now it's obvious that left is one of our assumptions
+  -- and so it can be closed easily with the following.
+  left,
+  assumption, 
+  -- This proof is shorter than the official solution.
 end
 
 lemma subset_union_right : Y ⊆ X ∪ Y :=
 begin
-  sorry
+  -- based on what we learnt above, this is quite simply.
+  intros a h,
+  right,
+  assumption,
 end
 
 lemma union_subset_iff : X ∪ Y ⊆ Z ↔ X ⊆ Z ∧ Y ⊆ Z :=
 begin
-  sorry
+  split,
+  {
+    intro h,
+    split,
+    { -- goal here is X ⊆ Z, which is saying by definition that if a ∈ X then x ∈ Z
+      -- so intros a h here, gives a : Ω and haX a ∈ X, goal is a ∈ Z
+      intros a haX,
+      apply h, left, assumption},    
+    { -- goal here is  Y ⊆ Z so we do the intros again
+      intros a haY,
+      apply h, right, assumption}
+  },
+  {
+    -- goal here is X ⊆ Z ∧ Y ⊆ Z → X ∪ Y ⊆ Z
+    rintro ⟨hXsubZ, hYsubZ⟩ a haXuY,
+    -- the above gives: hAXuY : a ∈ X ∪ Y
+    -- with hXsubZ: X ⊆ Z  and  hYsubZ: Y ⊆ Z
+    -- goal is a ∈ Z
+    -- to prove this we need to know the different cases of hAXuY : a ∈ X ∪ Y
+    cases haXuY,
+    -- REMINDER from solution, the above rintro followed by cases can be simplified as
+    -- rintros ⟨hXZ, hYZ⟩ a (haX | haY),
+    {apply hXsubZ, assumption},
+    {apply hYsubZ, assumption}
+  }
 end
 
 variable (W : set Ω)
