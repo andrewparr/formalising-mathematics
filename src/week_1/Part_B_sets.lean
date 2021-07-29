@@ -225,15 +225,60 @@ variable (W : set Ω)
 
 lemma union_subset_union (hWX : W ⊆ X) (hYZ : Y ⊆ Z) : W ∪ Y ⊆ X ∪ Z :=
 begin
-  sorry
+  -- we don't need this as it's being rewritten to be the defintion
+  -- but it makes the next step clearer seeing what the definition is.
+  rw subset_def,
+  -- goal is now a ∀, so intro to get an arbitrary element.
+  -- and remember the cases hint.
+  rintro a (haW | haY),
+  {
+    -- our goal is a ∈ X ∪ Z
+    -- but we have a ∈ W and hWX : W ⊆ X
+    -- so our proof says a ∈ X ∪ Z if we can prove a ∈ X
+    -- by by hWX we can proove a ∈ X if we can prove a ∈ W
+    -- and we can prove this as it's one of our hypothesis    
+    apply subset_union_left _,
+    apply hWX,
+    assumption,
+  },
+  {
+    -- goal here is a ∈ X ∪ Z and we have
+    -- a ∈ Y and hYZ : Y ⊆ Z
+    -- so arguing like above,
+    apply subset_union_right _,
+    apply hYZ,
+    assumption,
+  }
+end
+
+-- Note, the official solution has a much shorter way of saying the above.
+-- Remember to use left or right for goals of the form a ∈ X ∪ Z
+lemma union_subset_union' (hWX : W ⊆ X) (hYZ : Y ⊆ Z) : W ∪ Y ⊆ X ∪ Z :=
+begin
+  rintros a (haW | haY),
+  { left,
+    exact hWX haW },
+  { right,
+    exact hYZ haY }
 end
 
 lemma union_subset_union_left (hXY : X ⊆ Y) : X ∪ Z ⊆ Y ∪ Z :=
 begin
-  sorry
+  -- Following the style of the solution above
+  rintro a (haX | haZ),
+  {
+    left, 
+    exact hXY haX,
+  },
+  {
+    right, exact haZ,
+  }
 end
 
 -- etc etc
+
+-- I guess the etc etc comment here is because there are numerous lemma that can be written that are
+-- all proved in a similar way.  Probably the mathlib has many of them.
 
 -- intersection lemmas
 
