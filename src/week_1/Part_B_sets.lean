@@ -284,25 +284,57 @@ end
 
 lemma inter_subset_left : X ∩ Y ⊆ X :=
 begin
-  sorry
+    -- using rintro to combine intros with cases
+    rintro a ⟨haX , haY⟩,
+    exact haX,
 end
 
 -- don't forget `ext` to make progress with equalities of sets
 
 lemma inter_self : X ∩ X = X :=
 begin
-  sorry
+  ext a,
+  split,
+  {intro h, cases h with haX; assumption,},
+  {intro h,split; assumption}
 end
 
 lemma inter_comm : X ∩ Y = Y ∩ X :=
 begin
-  sorry
+  ext a,
+  -- there's a lot of symmetry in this proof, so making good use of the ;
+  -- following the two splits which means the following tactics apply to both parts following the split.
+  split;
+  {rintro ⟨haX , haY⟩, split; assumption },  
+end
+
+-- Interestingly the solution doesn't need a second split.
+lemma inter_comm' : X ∩ Y = Y ∩ X :=
+begin
+  ext a,
+  split;
+  { rintro ⟨h1, h2⟩,
+    -- I'm not yet clear on what these ⟨ ⟩  do in this exact.
+    -- Similar I guess to when used in rintros but I don't think it has been explained.
+    -- rintro ⟨ ⟩ is an intro followed by a cases
+    -- so maybe this is like a split followed by exact
+    exact ⟨h2, h1⟩ }
 end
 
 lemma inter_assoc : X ∩ (Y ∩ Z) = (X ∩ Y) ∩ Z :=
 begin
-  sorry
+  ext a,
+  split,
+  -- this is cool, copired above style with intro and exact
+  -- but used nested ⟨⟩ brackets to match the grouping in the goal.
+  -- rintro?, -- See following comment, uncomment this to have link to rintro documentation
+  {rintro ⟨h1, ⟨h2, h3⟩⟩, exact⟨⟨h1, h2⟩, h3⟩,},
+  {rintro ⟨⟨h1, h2⟩, h3⟩, exact⟨h1, ⟨h2, h3⟩⟩,}
 end
+-- Note, the official solution is the same as this, but you don't need the nested ⟨ ⟩ 
+-- when the implicit ordering matches.
+-- it also suggests using rintro? to view the syntax
+
 
 /-!
 
@@ -312,12 +344,69 @@ end
 
 lemma not_exists_iff_forall_not : ¬ (∃ a, a ∈ X) ↔ ∀ b, ¬ (b ∈ X) :=
 begin
-  sorry,
+  split,
+  {
+    intros h1 a h2, 
+    -- our goal here is false and we have h1 : ¬ ∃ a ∈ X and h2 : a ∈ X.
+    -- which are contradictory. 
+    -- the h1 : ¬ ∃ a ∈ X and h2 : a ∈ X.
+    -- can be interpreted as h1 : a ∈ X → false , and so
+    apply h1, -- converts goal of false to goal of ∃ a : a ∈ X, which is h2
+    use a,
+    exact h2
+  },
+  { 
+    rintro h1 ⟨a,haX⟩,
+    -- h1: ∀ (b : Ω), b ∉ X
+    -- haX: a ∈ X, goal is false
+    exact h1 a haX,
+    -- or broken down, this would be
+    -- apply h1 a,
+    -- exact haX,
+  }
 end
 
 example : ¬ (∀ a, a ∈ X) ↔ ∃ b, ¬ (b ∈ X) :=
 begin
-  sorry,
+  split,
+  {
+    -- the goal here is to prove that if not all elements of type Ω are in X
+    -- then there exists and element, b, of type Ω such that b ∉ X,
+    intro h, -- h: ¬∀ (a : Ω), a ∈ X
+    -- goal is ∃ (b : Ω), b ∉ X
+    -- h says that not all elements of type Ω are in X,
+    -- goal says there exists b : Ω, b ∉ X,
+    -- these are complimentary, we just want to say using h let a be
+    -- such an element of type Ω that is not in X and use this to prove the goal.
+    -- But this seem tricky to argue in Lean.
+    --
+    -- The proof argument here goes something like this.
+    -- goal says there exists an element of type Ω that is not in X
+    -- aiming for a contractition, assume there does not exist and element of Ω that is not in X
+
+    -- Therefore let a be any element of type Ω, by the contradiction we have a ∈ X.
+    -- now by h, not all elements of type Ω are in x, 
+    -- use this to ...
+
+    -- by h we have not all elements of Ω are in X, so use this to 
+    -- let a be such an element.
+    by_contra h2,
+    -- the above line gives us the contradiction as h2: ¬∃ (b : Ω), b ∉ X
+    -- we now need to prove false
+    apply h,
+    intro a,
+    by_contra h,
+    apply h2,
+    use a,
+  },
+  {
+    -- goal is (∃ (b : Ω), b ∉ X) → (¬∀ (a : Ω), a ∈ X)
+    intro h, -- h: ∃ (b : Ω), b ∉ X
+    cases h with b h2,
+    intro h,
+    apply h2,
+    apply h,
+  }
 end
 
 end xena
