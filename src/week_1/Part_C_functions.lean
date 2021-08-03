@@ -190,13 +190,75 @@ end
 /-- The identity function is bijective. -/
 lemma bijective_id : bijective (id : X → X) :=
 begin
-  sorry,
+  rw bijective_def, -- again this is only for clarity.
+  -- we now see we have an and, so split is the obvious step
+  split,
+  -- following the hint, just refer to the earlier proofs
+  {exact injective_id,},
+  {exact surjective_id,},
 end
+
+-- the solution reduces this down to one line
+-- so another example where split followed by exact can be performed together.
+lemma bijective_id' : bijective (id : X → X) :=
+begin
+  exact ⟨injective_id, surjective_id⟩,
+end
+
 
 /-- A composite of bijective functions is bijective. -/
 lemma bijective_comp (hf : bijective f) (hg : bijective g) : bijective (g ∘ f) :=
 begin
-  sorry,
+  split,
+  -- note lemma injective_comp (hf : injective f) (hg : injective g) : injective (g ∘ f) :=
+  -- however we have hf : bijective f and hg : bijective g
+  -- but we can use the .1 and .2 to take the correct one
+  { exact injective_comp hf.1 hg.1},
+  { exact surjective_comp hf.2 hg.2,}
 end
+
+-- Now we've done the above, in a similar way above we can reduce to one line
+lemma bijective_comp' (hf : bijective f) (hg : bijective g) : bijective (g ∘ f) :=
+begin
+  exact ⟨ injective_comp hf.1 hg.1, surjective_comp hf.2 hg.2 ⟩
+  -- this is actually shorter then the solution which doesn't use the .1 and .2 notation.
+  -- I wonder why. Maybe the .1 and .2 notation is considered "risky" because it
+  -- uses implementation details of bijective. If the ordering changed this proof would
+  -- break. 
+  -- After instead of
+  --    lemma bijective_def : bijective f ↔ injective f ∧ surjective f :=
+  -- we could just as easily have
+  --    lemma bijective_def : bijective f ↔  surjective f ∧ injective f :=
+  -- and that would break this proof.
+end
+
+-- Lets try that with another defintion of bijective
+def bijective2 (f : X → Y) := surjective f  ∧ injective f
+
+lemma bijective_comp2 (hf : bijective2 f) (hg : bijective2 g) : bijective2 (g ∘ f) :=
+begin
+  -- using bijective2 I had to sway around the surjective_comp and injective_comp
+  exact ⟨ surjective_comp hf.1 hg.1, injective_comp hf.2 hg.2 ⟩
+end
+
+-- But actually the official solution also needs changing
+-- The offial solution for the default bijective def is
+lemma bijective_comp'' (hf : bijective f) (hg : bijective g) : bijective (g ∘ f) :=
+begin
+  cases hf with hf_inj hf_surj,
+  cases hg with hg_inj hg_surj,
+  exact ⟨injective_comp hf_inj hg_inj, surjective_comp hf_surj hg_surj⟩
+end
+
+-- If I change this to use bijective2
+-- then I also have to switch things around.
+-- so it would seem to me the .1 and .2 notation is no worse off and makes the proofs shorter.
+lemma bijective_comp2' (hf : bijective2 f) (hg : bijective2 g) : bijective2 (g ∘ f) :=
+begin
+  cases hf with hf_surj hf_inj,
+  cases hg with hg_surj hg_inj,
+  exact ⟨surjective_comp hf_surj hg_surj, injective_comp hf_inj hg_inj⟩
+end
+
 
 end xena
