@@ -81,6 +81,14 @@ theorem eq_of_mem (hX : X ∈ P.C) (hY : Y ∈ P.C) {a : α} (haX : a ∈ X)
 -- Proof: follows immediately from the disjointness hypothesis.
 P.Hdisjoint _ _ hX hY ⟨a, haX, haY⟩
 
+-- Before we start, lets break down the above term mode proof.
+theorem eq_of_mem' (hX : X ∈ P.C) (hY : Y ∈ P.C) {a : α} (haX : a ∈ X)
+  (haY : a ∈ Y) : X = Y :=
+begin
+  exact P.Hdisjoint _ _ hX hY ⟨a, haX, haY⟩,
+end
+
+
 /-- If a is in two blocks X and Y, and if b is in X,
   then b is in Y (as X=Y) -/
 theorem mem_of_mem (hX : X ∈ P.C) (hY : Y ∈ P.C) {a b : α}
@@ -88,7 +96,21 @@ theorem mem_of_mem (hX : X ∈ P.C) (hY : Y ∈ P.C) {a b : α}
 begin
   -- you might want to start with `have hXY : X = Y`
   -- and prove it from the previous lemma
-  sorry,
+  have hXY : X = Y,
+  -- following the hint, after this line the goal is to prove that X=Y.
+  -- Following that, the goal goes back to the goal of b ∈ Y but to help
+  -- you then have the hXY : X = Y.
+  {
+    -- proving have, that is proving X = Y
+    -- this can be proved with just duplicating the proof used above. i.e.
+    --    exact P.Hdisjoint _ _ hX hY ⟨a, haX, haY⟩,
+    -- but probably what is meant is to use the proof like below.
+    exact eq_of_mem hX hY haX haY,
+  },
+  -- back to proving b ∈ Y.
+  rw ←hXY, -- hXY is X = Y, so we need to rw this backwards, with ← to change the Y to an X
+  -- now goal is b ∈ X, which is hbX
+  exact hbX,
 end
 
 /-- Every term of type `α` is in one of the blocks for a partition `P`. -/
@@ -96,8 +118,31 @@ theorem mem_block (a : α) : ∃ X : set α, X ∈ P.C ∧ a ∈ X :=
 begin
   -- an interesting way to start is
   -- `obtain ⟨X, hX, haX⟩ := P.Hcover a,`
-  sorry,
+  obtain ⟨X, hX, haX⟩ := P.Hcover a,
+  -- this line spits out the individual proved theorems from P.Hcover
+  -- it's now easy to just use X (for the there exists) split the ∧ and show the other parts
+  -- are already proven.
+  use X,
+  split,
+  exact hX,
+  exact haX,
 end
+
+theorem mem_block' (a : α) : ∃ X : set α, X ∈ P.C ∧ a ∈ X :=
+begin
+  -- an interesting way to start is
+  -- `obtain ⟨X, hX, haX⟩ := P.Hcover a,`
+  obtain ⟨X, hX, haX⟩ := P.Hcover a,
+  -- this line spits out the individual proved theorems from P.Hcover
+  -- it's now easy to just use X (for the there exists) split the ∧ and show the other parts
+  -- are already proven.
+  use X,
+  -- note instead of a split followed by two exacts, you can just do this
+  exact ⟨hX, haX⟩,
+end
+
+-- The above comment says "an interesting way to start is ... "
+-- But what is the alternative way to start?
 
 end partition
 
@@ -119,12 +164,19 @@ section equivalence_classes
 
 -- Notation and variables for the equivalence class section:
 
--- let α be a type, and let R be a binary relation on R.
+-- let α be a type, and let R be a binary relation on α.
 variables {α : Type} (R : α → α → Prop)
 
 /-- The equivalence class of `a` is the set of `b` related to `a`. -/
 def cl (a : α) :=
 {b : α | R b a}
+
+-- What is this saying?
+-- From looking ahead a little. `cl R a ` is the set
+-- which of b ∈ α, such that `R a b` is true.
+
+-- ? How is this defining the equivalence class. 
+-- The binary releation hasn't been specified to be an equivalence relation.
 
 /-!
 
@@ -140,9 +192,22 @@ begin
   refl
 end
 
+-- From definition above. cl R a is the set which contains all b : α
+-- such that R b a is true. So yes, it's true by definition and this still has
+-- nothing so far to do with equivalence relations.
+
+
 -- Assume now that R is an equivalence relation.
 variables {R} (hR : equivalence R)
 include hR
+
+-- Ah ha!  This could have been made clearer above..  The cl is NOT defining an equivalence
+-- relation as I said. It's only a binary relation.   When you insist that it satisfies the
+-- criteria for an equivalence, then it's an equivalence relation.
+-- This defintion is in logic.lean and is
+-- def equivalence := reflexive r ∧ symmetric r ∧ transitive r
+-- so is the above is saying hR is a proof that R is an equivalence.
+-- without providing that proof. Which we can't because R is a generic binary relation.
 
 /-- x is in cl(x) -/
 lemma mem_cl_self (a : α) :
@@ -152,15 +217,49 @@ begin
   -- You can extract the things with
   -- `rcases hR with ⟨hrefl, hsymm, htrans⟩,` or
   -- `obtain ⟨hrefl, hsymm, htrans⟩ := hR,`
-  sorry,
+  rcases hR with ⟨hrefl, hsymm, htrans⟩,
+  -- Note after looking up documentation of rcases, in case you
+  -- don't know how many parts are in hR you can just do
+  -- rcases? hR,
+  -- The Lean infoview then gives you the following which can replace it
+  -- rcases hR with ⟨hR_left, hR_right_left, hR_right_right⟩,
+  -- goal is a ∈ cl R a
+  -- and this is satisfied the the refeletivity requirement.
+  exact hrefl a,
 end
+
+example (a : α) : a ∈ cl R a :=
+begin
+  -- a quick example show using hR.1 to use the part we want directly.
+  exact hR.1 a,
+end
+
 
 lemma cl_sub_cl_of_mem_cl {a b : α} :
   a ∈ cl R b →
   cl R a ⊆ cl R b :=
 begin
   -- remember `set.subset_def` says `X ⊆ Y ↔ ∀ a, a ∈ X → a ∈ Y
-  sorry,
+  -- First lets decode what this lemma is saying.
+  --   a ∈ cl R b, means a is in the equivalence class of b
+  --   implies the equivalence class of a is a subset of the equivalence class of b.
+  -- We will need to use the hypothesis of R being an equivalence relation. So lets split it.
+  obtain ⟨hrefl, hsymm, htrans⟩ := hR,
+  -- The follow aren't necessary but they allow you to see the definition of what the three
+  -- componets of the equivalence relation are.
+  rw reflexive at hrefl,
+  rw symmetric at hsymm,
+  rw transitive at htrans,
+  -- there's a reason this lemma follows the previous proof of mem_cl_self
+  intro haRb, -- we have a in cl R b
+  have hbRb : b ∈ cl R b,
+  exact hrefl b,
+  intros c hcRa,
+  rw mem_cl_iff at haRb hcRa,
+  rw mem_cl_iff,
+  -- we now have hcRa : R c a, and haRb : R a b
+  -- and want to prove R c b, which uses transitivity.
+  exact htrans hcRa haRb,  
 end
 
 lemma cl_eq_cl_of_mem_cl {a b : α} :
