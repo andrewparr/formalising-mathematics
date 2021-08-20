@@ -8,6 +8,10 @@ Definition and basic properties of a group.
 
 -/
 
+-- I added the following so I could go to the mathlib definition of group
+-- which has more hierarchy building up the group definition.
+-- variables {G : Type} [group G]
+
 -- Technical note: We work in a namespace `xena` because Lean already has groups.
 namespace xena
 -- Now our definition of a group will really be called `xena.group`. 

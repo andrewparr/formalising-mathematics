@@ -259,15 +259,53 @@ begin
   rw mem_cl_iff,
   -- we now have hcRa : R c a, and haRb : R a b
   -- and want to prove R c b, which uses transitivity.
-  exact htrans hcRa haRb,  
+  exact htrans hcRa haRb,
 end
+
+-- Now we have the above proof. The following is the above "golfed"
+lemma cl_sub_cl_of_mem_cl' {a b : α} :
+  a ∈ cl R b →
+  cl R a ⊆ cl R b :=
+begin
+  obtain ⟨hrefl, hsymm, htrans⟩ := hR,
+  intros haRb c hcRa,
+  rw mem_cl_iff at *,
+  exact htrans hcRa haRb,
+end
+-- apart from or ording this is the same as the official solution.
 
 lemma cl_eq_cl_of_mem_cl {a b : α} :
   a ∈ cl R b →
   cl R a = cl R b :=
 begin
   -- remember `set.subset.antisymm` says `X ⊆ Y → Y ⊆ X → X = Y`
-  sorry
+
+  -- This proof is saying that if a is in the equivalence class of b
+  -- then the equivalence class of a is the same as the equivalence class of b.
+  
+  -- goal is an applies, so lets intro the hypothesis
+  intro haRb,
+  -- goal is now cl R a = cl R b
+  -- now each of cl R a and cl R b are sets, so this is saying two sets are equal
+  -- I'd like to split this to get the two goals of each one a subset of the other.
+  -- but that doesn't work here. Hence the hint above, we need to use
+  apply set.subset.antisymm,
+  -- We now have two goals
+  {
+    -- goal  cl R a ⊆ cl R b
+    -- this is just what we proved above.
+    exact cl_sub_cl_of_mem_cl hR haRb,
+  },
+  {
+    -- goal cl R b ⊆ cl R 
+    -- Here we can't just use the earlier proof, so lets break up the equivalence of R.
+    -- but we can apply
+    apply cl_sub_cl_of_mem_cl hR,
+    -- to change the goal to b ∈ cl R a
+    obtain ⟨hrefl, hsymm, htrans⟩ := hR,
+    exact hsymm haRb,
+  }
+
 end
 
 end equivalence_classes -- section
@@ -276,7 +314,7 @@ end equivalence_classes -- section
 
 # 3) The theorem
 
-Let `α` be a type (i.e. a collection of stucff).
+Let `α` be a type (i.e. a collection of stuff).
 
 There is a bijection between equivalence relations on `α` and
 partitions of `α`.
@@ -286,7 +324,6 @@ and proving that the constructions are two-sided inverses of one another.
 -/
 
 open partition
-
 
 example (α : Type) : {R : α → α → Prop // equivalence R} ≃ partition α :=
 -- We define constructions (functions!) in both directions and prove that
@@ -301,23 +338,55 @@ example (α : Type) : {R : α → α → Prop // equivalence R} ≃ partition α
     -- hypotheses for a partition (`Hnonempty`, `Hcover` and `Hdisjoint`),
     -- so we need to supply three proofs.
     Hnonempty := begin
+      -- this cases line changes the 
+      --    R: {R // equivalence R}
+      -- to being
+      --    R: α → α → Prop
+      --    hR: equivalence R
+      -- I.e. the two components, I'm not sure yet what the // does to group them
+      -- together.
       cases R with R hR,
       -- If X is an equivalence class then X is nonempty.
       show ∀ (X : set α), (∃ (a : α), X = cl R a) → X.nonempty,
-      sorry,
+      rintros _ ⟨a, rfl⟩,
+      use a,
+      obtain ⟨hrefl, hsymm, htrans⟩ := hR,
+      apply hrefl,
     end,
     Hcover := begin
       cases R with R hR,
       -- The equivalence classes cover α
       show ∀ (a : α), ∃ (X : set α) (H : ∃ (b : α), X = cl R b), a ∈ X,
-      sorry,
+      intro a,
+      use cl R a,
+      split,
+        use a,
+      apply hR.1,
     end,
     Hdisjoint := begin
       cases R with R hR,
       -- If two equivalence classes overlap, they are equal.
       show ∀ (X Y : set α), (∃ (a : α), X = cl R a) →
         (∃ (b : α), Y = cl _ b) → (X ∩ Y).nonempty → X = Y,
-      sorry,
+      intros X Y,
+      rintro ⟨a, rfl⟩,
+      rintro ⟨b, rfl⟩,
+      rintro ⟨c, hca, hcb⟩,
+      dsimp at *, -- solution offers this as a tidy up
+      apply cl_eq_cl_of_mem_cl hR,
+      -- goal is a ∈ cl R b
+      -- hR is that R is an equivalence which has three parts
+      --    reflexive R ∧ symmetric R ∧ transitive R
+      -- but remember this is actually bracketed like this
+      --    reflexive R ∧ ( symmetric R ∧ transitive R )
+      -- so hR.2 is the ( symmetric R ∧ transitive R ) part
+      -- and to get the transitive part directly we need
+      -- hR.2.2
+      apply hR.2.2,
+      change R a c,
+      apply hR.2.1, -- this is using the symmetric property
+      exact hca,
+      exact hcb,
     end },
   -- Conversely, say P is an partition. 
   inv_fun := λ P, 
@@ -331,14 +400,18 @@ example (α : Type) : {R : α → α → Prop // equivalence R} ≃ partition α
     { -- It's reflexive
       show ∀ (a : α)
         (X : set α), X ∈ P.C → a ∈ X → a ∈ X,
-      sorry,
+      intros a X hXC haX,
+      assumption,
     },
     split,
     { -- it's symmetric
       show ∀ (a b : α),
         (∀ (X : set α), X ∈ P.C → a ∈ X → b ∈ X) →
          ∀ (X : set α), X ∈ P.C → b ∈ X → a ∈ X,
-      sorry,
+      intros a b h X hX hbX,
+      obtain ⟨Y, hY, haY⟩ := P.Hcover a,
+      specialize h Y hY haY,
+      exact mem_of_mem hY hX h hbX haY,
     },
     { -- it's transitive
       unfold transitive,
@@ -346,7 +419,11 @@ example (α : Type) : {R : α → α → Prop // equivalence R} ≃ partition α
         (∀ (X : set α), X ∈ P.C → a ∈ X → b ∈ X) →
         (∀ (X : set α), X ∈ P.C → b ∈ X → c ∈ X) →
          ∀ (X : set α), X ∈ P.C → a ∈ X → c ∈ X,
-      sorry,
+      intros a b c hbX hcX X hX haX,
+      apply hcX,
+      assumption,
+      apply hbX;
+      assumption,
     }
   end⟩,
   -- If you start with the equivalence relation, and then make the partition
@@ -360,7 +437,21 @@ example (α : Type) : {R : α → α → Prop // equivalence R} ≃ partition α
     ext a b,
     -- so you have to prove an if and only if.
     show (∀ (c : α), a ∈ cl R c → b ∈ cl R c) ↔ R a b,
-    sorry,
+    split,
+    { 
+      intros hab,
+      apply hR.2.1,
+      apply hab,
+      apply hR.1,
+    },
+    {
+      intros hab c hac,
+      apply hR.2.2,
+      change R b a,
+      apply hR.2.1,
+      exact hab,
+      exact hac,
+    },
   end,
   -- Similarly, if you start with the partition, and then make the
   -- equivalence relation, and then construct the corresponding partition 
@@ -373,5 +464,76 @@ example (α : Type) : {R : α → α → Prop // equivalence R} ≃ partition α
     ext X,
     show (∃ (a : α), X = cl _ a) ↔ X ∈ P.C,
     dsimp only,
-    sorry,
+    split,
+    {
+      rintro ⟨a, rfl⟩,
+      obtain ⟨X, hX, haX⟩ := P.Hcover a,
+      convert hX,
+      ext b,
+      rw mem_cl_iff,
+      split,
+      {
+        intro haY,
+        obtain ⟨Y, hY, hbY⟩ := P.Hcover b,
+        specialize haY Y hY hbY,
+        convert hbY,
+        exact eq_of_mem hX hY haX haY,
+      },
+      { 
+        intros hbX Y hY hbY,
+        apply mem_of_mem hX hY hbX hbY haX,
+      }
+    },
+    {
+      intro hX,
+      rcases P.Hnonempty X hX with ⟨a, ha⟩,
+      use a,
+      ext b,
+      split,
+      {
+        intro hbX,
+        rw mem_cl_iff,
+        intros Y hY hbY,
+        exact mem_of_mem hX hY hbX hbY ha,
+      },
+      {
+        rw mem_cl_iff,
+        intro haY,
+        obtain ⟨Y, hY, hbY⟩ := P.Hcover b,
+        specialize haY Y hY hbY,
+        exact mem_of_mem hY hX haY ha hbY,
+      }
+    }
+    
   end }
+
+/--
+The above hasn't really been explained, we have so far only proved theorems
+and then we have this structure without any explanation.
+These are my notes in trying to understand this.
+
+Clicking on the ≃ symble and going to definition give the following:
+
+  `α ≃ β` is the type of functions from `α → β` with a two-sided inverse.
+  @[nolint has_inhabited_instance]
+  structure equiv (α : Sort*) (β : Sort*) :=
+  (to_fun    : α → β)
+  (inv_fun   : β → α)
+  (left_inv  : left_inverse inv_fun to_fun)
+  (right_inv : right_inverse inv_fun to_fun)
+
+So the above structure is providing the elements of this equiv structure.
+In order to prove it is an equivalence relation.
+
+to_fun is a function from α to β, in our case α is an equivalence relation 
+and β is the partition. So to_fun defines a function from the equivalence relation
+to the partition.
+From the definition of partition above we have to show that it has:
+  (Hnonempty : ∀ X ∈ C, (X : set α).nonempty)
+  (Hcover : ∀ a, ∃ X ∈ C, a ∈ X)
+  (Hdisjoint : ∀ X Y ∈ C, (X ∩ Y : set α).nonempty → X = Y)
+
+Which is what is being proved in to_fun.
+
+
+-/
